@@ -35,7 +35,7 @@ class UserViewSet(mixins.CreateModelMixin,
         if self.action == 'me':
             return self.request.user
         return super().get_object()
-    
+
     def get_queryset(self):
         if self.action == 'subscriptions':
             return self.request.user.subscriptions.all()
@@ -49,7 +49,7 @@ class UserViewSet(mixins.CreateModelMixin,
         if self.action in ('subscriptions', 'subscribe'):
             return UserSerializerWithRecipes
         return super().get_serializer_class()
-    
+
     def get_permissions(self):
         if self.action == 'create':
             return (AllowAny(),)
