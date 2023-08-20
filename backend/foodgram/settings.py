@@ -9,10 +9,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv('SECRET_KEY', 'qwert12345')
 
-DEBUG = True
-# os.getenv('DEBUG', 'False') == 'True'
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -28,6 +27,7 @@ INSTALLED_APPS = [
     'recipes.apps.RecipesConfig',
     'api.apps.ApiConfig',
     'django_filters',
+    'colorfield',
 ]
 
 MIDDLEWARE = [
@@ -87,7 +87,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'ru'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Moscow'
 
 USE_I18N = True
 
@@ -127,3 +127,6 @@ DJOSER = {
         'user_list': ['rest_framework.permissions.AllowAny'],
     },
 }
+
+LENGTH_TEXT = 15
+LENGTH_FIELD = 150

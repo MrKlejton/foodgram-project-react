@@ -1,50 +1,75 @@
 from django.contrib.auth.models import AbstractUser
+from django.core.validators import RegexValidator
 from django.db import models
+
+from foodgram.settings import LENGTH_TEXT, LENGTH_FIELD
 
 
 class User(AbstractUser):
     username = models.CharField(
-        max_length=150,
+        max_length=LENGTH_FIELD,
         unique=True,
-        verbose_name='Имя на сайте'
+        verbose_name='Имя на сайте',
+        validators=[RegexValidator(
+            regex=r'^[\w.@+-]+$',
+            message='Имя пользователя содержит недопустимый символ'
+        )]
     )
     password = models.CharField(
-        max_length=12,
+        max_length=LENGTH_FIELD,
         unique=True,
+        verbose_name='Пароль'
     )
     email = models.EmailField(
-        max_length=50,
+        max_length=254,
         unique=True,
         verbose_name='Адрес электронной почты'
     )
     first_name = models.CharField(
-        max_length=150,
+        max_length=LENGTH_FIELD,
         verbose_name='Имя'
     )
     last_name = models.CharField(
-        max_length=150,
+        max_length=LENGTH_FIELD,
         verbose_name='Фамилия'
     )
-    subscriptions = models.ManyToManyField(
-        'self',
-        verbose_name='Любимые авторы',
-        symmetrical=False
-    )
-    favorites = models.ManyToManyField(
-        'recipes.Recipe',
-        verbose_name='Избранные рецепты',
-        related_name='favorites_of_users'
-    )
-    cart = models.ManyToManyField(
-        'recipes.Recipe',
-        verbose_name='Покупки',
-        related_name='shopping_cart'
-    )
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
 
     class Meta:
-        ordering = ('id',)
+        ordering = ('username',)
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
 
     def __str__(self):
-        return self.username
+        return self.username[:LENGTH_TEXT]
+
+
+class Subscription(models.Model):
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='subscriber',
+        verbose_name='Подписчик'
+    )
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='author',
+        verbose_name='Автор'
+    )
+
+    class Meta:
+        ordering = ('user',)
+        verbose_name = 'Подписка'
+        verbose_name_plural = 'Подписки'
+        constraints = (
+            models.UniqueConstraint(
+                fields=['author', 'user'],
+                name='unique_subscription'
+            ),
+        )
+
+    def __str__(self):
+        return f'{self.user} подписан на: {self.author}'
