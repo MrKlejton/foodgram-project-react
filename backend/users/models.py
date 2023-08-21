@@ -65,6 +65,10 @@ class Subscription(models.Model):
         verbose_name = 'Подписка'
         verbose_name_plural = 'Подписки'
         constraints = (
+            models.CheckConstraint(
+                check=~models.Q(user=models.F('author')),
+                name='no_youself_subscription'
+            ),
             models.UniqueConstraint(
                 fields=['author', 'user'],
                 name='unique_subscription'

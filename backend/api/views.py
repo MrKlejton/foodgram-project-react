@@ -9,18 +9,19 @@ from rest_framework.permissions import IsAuthenticated, SAFE_METHODS
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
+from api.filters import IngredientFilter, RecipeFilter
+from api.pagination import CustomPagination
+from api.permissions import IsAdminOrReadOnly, IsAuthorOrReadOnly
+from api.serializers import (
+    CustomUserSerializer, IngredientSerializer,
+    RecipeReadSerializer, RecipeShortSerializer,
+    RecipeWriteSerializer, SubscribeSerializer,
+    TagSerializer
+)
 from foodgram.settings import CSV_FILES_DIR
 from recipes.models import (Favorite, Ingredient, AmountIngredient, Recipe,
                             ShoppingCart, Tag)
 from users.models import Subscription, User
-
-from .filters import IngredientFilter, RecipeFilter
-from .pagination import CustomPagination
-from .permissions import IsAdminOrReadOnly, IsAuthorOrReadOnly
-from .serializers import (CustomUserSerializer, IngredientSerializer,
-                          RecipeReadSerializer, RecipeShortSerializer,
-                          RecipeWriteSerializer, SubscribeSerializer,
-                          TagSerializer)
 
 
 class CustomUserViewSet(UserViewSet):

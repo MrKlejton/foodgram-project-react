@@ -4,7 +4,9 @@ from django.core.validators import (
 )
 from django.db import models
 
-from foodgram.settings import LENGTH_TEXT, LENGTH_FIELD
+from foodgram.settings import (
+    COLOR, LENGTH_TEXT, LENGTH_FIELD, LENGTH_NAME, LENGTH_UNIT
+)
 from users.models import User
 
 
@@ -15,7 +17,7 @@ class Tag(models.Model):
         verbose_name='Название'
     )
     color = ColorField(
-        max_length=7,
+        max_length=COLOR,
         unique=True,
         verbose_name='Цветовой HEX-код'
     )
@@ -43,7 +45,7 @@ class Ingredient(models.Model):
         verbose_name='Ингредиент'
     )
     measurement_unit = models.CharField(
-        max_length=30,
+        max_length=LENGTH_UNIT,
         verbose_name='Единицы измерения'
     )
 
@@ -70,7 +72,7 @@ class Recipe(models.Model):
         related_name='recipes'
     )
     name = models.CharField(
-        max_length=200,
+        max_length=LENGTH_NAME,
         verbose_name='Название'
     )
     image = models.ImageField(
@@ -175,59 +177,41 @@ class RecipeTags(models.Model):
         return f'У рецепта {self.recipe} есть тэг {self.tag}'
 
 
-class Favorite(models.Model):
+class FavCartBase(models.Model):
+    class Meta:
+        abstract = True
+        ordering = ('user',)
+        constraints = (
+            models.UniqueConstraint(
+                fields=['user', 'recipe'],
+                name='unique_%(class)s'
+            ),
+        )
+
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        related_name='favoriting',
+        related_name='%(class)s',
         verbose_name='Рецепт'
     )
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='favoriting',
+        related_name='%(class)s',
         verbose_name='Пользователь'
     )
 
+    def __str__(self):
+        return f'{self.user} добавил {self.recipe}'
+
+
+class Favorite(FavCartBase):
     class Meta:
-        ordering = ('user',)
         verbose_name = 'Избранное'
         verbose_name_plural = 'Избранное'
-        constraints = (
-            models.UniqueConstraint(
-                fields=['user', 'recipe'],
-                name='unique_favorite_recipe'
-            ),
-        )
-
-    def __str__(self):
-        return f'{self.recipe} в избранном у {self.user}'
 
 
-class ShoppingCart(models.Model):
-    recipe = models.ForeignKey(
-        Recipe,
-        on_delete=models.CASCADE,
-        related_name='shopping_cart',
-        verbose_name='Рецепт'
-    )
-    user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='shopping_cart',
-        verbose_name='Пользователь'
-    )
-
+class ShoppingCart(FavCartBase):
     class Meta:
-        ordering = ('user',)
         verbose_name = 'Список покупок'
         verbose_name_plural = 'Список покупок'
-        constraints = (
-            models.UniqueConstraint(
-                fields=['user', 'recipe'],
-                name='unique_shopping_cart'
-            ),
-        )
-
-    def __str__(self):
-        return f'{self.recipe} в списке покупок у {self.user}'

@@ -39,7 +39,7 @@ class RecipeAdmin(admin.ModelAdmin):
     list_filter = ('author', 'name',)
 
     def add_in_favorites(self, obj):
-        return obj.favoriting.all().count()
+        return obj.favorite.all().count()
 
     add_in_favorites.short_description = 'Количество добавлений в избранное'
 
@@ -64,21 +64,9 @@ class AmountIngredientAdmin(admin.ModelAdmin):
     list_filter = ('recipe',)
 
 
-class FavoriteAdmin(admin.ModelAdmin):
-    list_display = ('user', 'recipe',)
-    list_filter = ('user',)
-    search_fields = ('user',)
-
-
-class ShoppingCartAdmin(admin.ModelAdmin):
-    list_display = ('user', 'recipe',)
-    list_filter = ('user',)
-    search_fields = ('user',)
-
-
 admin.site.register(Recipe, RecipeAdmin)
 admin.site.register(Ingredient, IngredientAdmin)
 admin.site.register(Tag, TagAdmin)
 admin.site.register(AmountIngredient, AmountIngredientAdmin)
-admin.site.register(Favorite, FavoriteAdmin)
-admin.site.register(ShoppingCart, ShoppingCartAdmin)
+admin.site.register(Favorite)
+admin.site.register(ShoppingCart)
