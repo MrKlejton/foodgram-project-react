@@ -1,3 +1,5 @@
+from re import match
+
 from django.db import transaction
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from drf_extra_fields.fields import Base64ImageField
@@ -7,7 +9,7 @@ from rest_framework.fields import IntegerField, SerializerMethodField
 from rest_framework.relations import PrimaryKeyRelatedField
 from rest_framework.serializers import ModelSerializer
 
-from recipes.models import Ingredient, AmountIngredient, Recipe, Tag
+from recipes.models import AmountIngredient, Ingredient, Recipe, Tag
 from users.models import Subscription, User
 
 
@@ -49,7 +51,7 @@ class SubscribeSerializer(CustomUserSerializer):
         fields = CustomUserSerializer.Meta.fields + (
             'recipes_count', 'recipes'
         )
-        read_only_fields = ('email', 'username')
+        read_only_fields = ('email', 'username', 'first_name', 'last_name')
 
     def validate(self, data):
         author = self.instance
@@ -59,19 +61,28 @@ class SubscribeSerializer(CustomUserSerializer):
                 detail='Вы уже подписаны на этого пользователя!',
                 code=status.HTTP_400_BAD_REQUEST
             )
+        if user == author:
+            raise ValidationError(
+                detail='Вы не можете подписаться на самого себя!',
+                code=status.HTTP_400_BAD_REQUEST
+            )
         return data
-
-    def get_recipes_count(self, obj):
-        return obj.recipes.count()
 
     def get_recipes(self, obj):
         request = self.context.get('request')
-        limit = request.GET.get('recipes_limit')
-        recipes = obj.recipes.all()
-        if limit:
-            recipes = recipes[:int(limit)]
-        serializer = RecipeShortSerializer(recipes, many=True, read_only=True)
-        return serializer.data
+        if not request or request.user.is_anonymous:
+            return False
+        context = {'request': request}
+        recipes_limit = request.query_params.get('recipes_limit')
+        if recipes_limit is not None:
+            recipes = obj.recipes.all()[:int(recipes_limit)]
+        else:
+            recipes = obj.recipes.all()
+        return RecipeShortSerializer(
+            recipes, many=True, context=context).data
+
+    def get_recipes_count(self, obj):
+        return obj.recipes.count()
 
 
 class IngredientSerializer(ModelSerializer):
@@ -93,10 +104,31 @@ class TagSerializer(ModelSerializer):
             'slug',)
 
 
+class IngredientInRecipeSerializer(ModelSerializer):
+    id = SerializerMethodField(method_name='get_id')
+    name = SerializerMethodField(method_name='get_name')
+    measurement_unit = SerializerMethodField(
+        method_name='get_measurement_unit'
+    )
+
+    def get_id(self, obj):
+        return obj.ingredient.id
+
+    def get_name(self, obj):
+        return obj.ingredient.name
+
+    def get_measurement_unit(self, obj):
+        return obj.ingredient.measurement_unit
+
+    class Meta:
+        model = AmountIngredient
+        fields = ("id", "name", "measurement_unit", "amount")
+
+
 class RecipeReadSerializer(ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
     author = CustomUserSerializer(read_only=True)
-    ingredients = SerializerMethodField()
+    ingredients = SerializerMethodField(method_name='get_ingredients')
     image = Base64ImageField()
     is_favorited = SerializerMethodField(read_only=True)
     is_in_shopping_cart = SerializerMethodField(read_only=True)
@@ -117,13 +149,9 @@ class RecipeReadSerializer(ModelSerializer):
         )
 
     def get_ingredients(self, obj):
-        recipe = obj
-        ingredients = recipe.ingredients.values(
-            'id',
-            'name',
-            'measurement_unit',
-        )
-        return ingredients
+        ingredients = AmountIngredient.objects.filter(recipe=obj)
+        serializer = IngredientInRecipeSerializer(ingredients, many=True)
+        return serializer.data
 
     def get_is_favorited(self, obj):
         user = self.context.get('request').user
@@ -220,7 +248,7 @@ class RecipeWriteSerializer(ModelSerializer):
 
     def validate_name(self, name):
         """Проверяем, что название не состоит только из символов и цифр."""
-        if name == r'^[\W\d\s]+$':
+        if match(r'^[\W\d\s]+$', name):
             raise ValidationError(
                 'Название не может состоять только из символов и цифр.'
             )

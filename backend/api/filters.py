@@ -1,7 +1,17 @@
-from django_filters import FilterSet, filters
-from rest_framework.filters import SearchFilter
+from django_filters.rest_framework import FilterSet, filters
 
 from recipes.models import Ingredient, Recipe
+
+
+class IngredientFilter(FilterSet):
+    name = filters.CharFilter(
+        field_name='name',
+        lookup_expr='startswith',
+    )
+
+    class Meta:
+        model = Ingredient
+        fields = ('name',)
 
 
 class RecipeFilter(FilterSet):
@@ -25,11 +35,3 @@ class RecipeFilter(FilterSet):
         if value:
             return queryset.filter(shoppingcart__user=self.request.user)
         return queryset
-
-
-class IngredientFilter(SearchFilter):
-    name = filters.CharFilter(lookup_expr='istartswith')
-
-    class Meta:
-        model = Ingredient
-        fields = ('name',)
