@@ -9,7 +9,7 @@ services:
     restart: always
 
   backend:
-    image: mrklejton/foodgram_backend
+    image: mrklejton/foodgram_backend:latest
     restart: always
     volumes:
       - static_value:/app/static/
