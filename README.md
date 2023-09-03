@@ -110,6 +110,83 @@ python manage.py createsuperuser
    python manage.py runserver
 ```
 
+
+### Инструкция для разворачивания проекта на удаленном сервере:
+
+- Склонируйте проект из репозитория:
+
+```sh
+$ git clone https://github.com/MrKlejtont/foodgram-project-react.git
+```
+
+- Выполните вход на удаленный сервер
+
+- Установите DOCKER на сервер:
+```sh
+apt install docker.io 
+```
+
+- Установитe docker-compose на сервер:
+```sh
+curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+chmod +x /usr/local/bin/docker-compose
+```
+
+- Отредактируйте конфигурацию сервера NGNIX:
+```sh
+Локально измените файл ..infra/nginx.conf - замените данные в строке server_name на IP-адрес удаленного сервера
+```
+
+- Скопируйте файлы docker-compose.yml и nginx.conf из директории ../infra/ на удаленный сервер:
+```sh
+scp docker-compose.yml <username>@<host>:/home/<username>/docker-compose.yaml
+scp nginx.conf <username>@<host>:/home/<username>/nginx.conf
+```
+- Создайте переменные окружения (указаны в файле ../infra/.env)
+
+- Установите и активируйте виртуальное окружение (для Windows):
+
+```sh
+python -m venv venv 
+source venv/Scripts/activate
+python -m pip install --upgrade pip
+``` 
+
+- Запустите приложение в контейнерах:
+
+```sh
+docker-compose up -d --build
+```
+
+- Выполните миграции:
+
+```sh
+docker-compose exec backend python manage.py migrate
+```
+
+- Создайте суперпользователя:
+
+```sh
+docker-compose exec backend python manage.py createsuperuser
+```
+
+- Выполните команду для сбора статики:
+
+```sh
+docker-compose exec backend python manage.py collectstatic --no-input
+```
+
+- Команда для заполнения тестовыми данными:
+```sh
+docker-compose exec backend python manage.py load_ingredients
+```
+
+- Команда для остановки приложения в контейнерах:
+
+```sh
+docker-compose down -v
+```
+
 #### Примеры некоторых запросов API
 
 Регистрация пользователя:
@@ -155,6 +232,8 @@ python manage.py createsuperuser
 ```
 
 #### Полный список запросов API находятся в документации
+
+Проект доступен по адресу: <https://myfoodgram.onthewifi.com/>
 
 #### Автор
 
